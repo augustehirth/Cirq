@@ -12,10 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
 import datetime
 import sys
-import threading
 from typing import (
     AsyncIterable,
     Awaitable,
@@ -39,6 +37,7 @@ from google.protobuf.timestamp_pb2 import Timestamp
 
 from cirq._compat import cached_property
 from cirq_google.cloud import quantum
+from cirq_google.engine.asyncio_executor import AsyncioExecutor
 
 _M = TypeVar('_M', bound=proto.Message)
 _R = TypeVar('_R')
@@ -51,40 +50,6 @@ class EngineException(Exception):
 
 
 RETRYABLE_ERROR_CODES = [500, 503]
-
-
-class AsyncioExecutor:
-    """Runs asyncio coroutines in a thread, exposes the results as duet futures.
-
-    This lets us bridge between an asyncio event loop (which is what async grpc
-    code uses) and duet (which is what cirq uses for asynchrony).
-    """
-
-    def __init__(self) -> None:
-        loop_future: duet.AwaitableFuture[asyncio.AbstractEventLoop] = duet.AwaitableFuture()
-        thread = threading.Thread(target=asyncio.run, args=(self._main(loop_future),), daemon=True)
-        thread.start()
-        self.loop = loop_future.result()
-
-    @staticmethod
-    async def _main(loop_future: duet.AwaitableFuture) -> None:
-        loop = asyncio.get_running_loop()
-        loop_future.set_result(loop)
-        while True:
-            await asyncio.sleep(1)
-
-    def submit(self, func: Callable[..., Awaitable[_R]], *args, **kw) -> duet.AwaitableFuture[_R]:
-        """Dispatch the given function to be run in an asyncio coroutine.
-
-        Args:
-            func: asyncio function which will be run in a separate thread.
-                Will be called with *args and **kw and should return an asyncio
-                awaitable.
-            *args: Positional args to pass to func.
-            **kw: Keyword args to pass to func.
-        """
-        future = asyncio.run_coroutine_threadsafe(func(*args, **kw), self.loop)
-        return duet.AwaitableFuture.wrap(future)
 
 
 class EngineClient:
@@ -122,9 +87,11 @@ class EngineClient:
 
         self._service_args = service_args
 
-    @cached_property
+    @property
     def _executor(self) -> AsyncioExecutor:
-        return AsyncioExecutor()
+        # We must re-use a single Executor due to multi-threading issues in gRPC
+        # clients: https://github.com/grpc/grpc/issues/25364.
+        return AsyncioExecutor.instance()
 
     @cached_property
     def grpc_client(self) -> quantum.QuantumEngineServiceAsyncClient:
@@ -170,7 +137,7 @@ class EngineClient:
                 message = err.message
                 # Raise RuntimeError for exceptions that are not retryable.
                 # Otherwise, pass through to retry.
-                if err.code.value not in RETRYABLE_ERROR_CODES:
+                if err.code not in RETRYABLE_ERROR_CODES:
                     raise EngineException(message) from err
 
             if current_delay > self.max_retry_delay_seconds:
@@ -210,9 +177,7 @@ class EngineClient:
         if labels:
             program.labels.update(labels)
 
-        request = quantum.CreateQuantumProgramRequest(
-            parent=parent_name, quantum_program=program, overwrite_existing_source_code=False
-        )
+        request = quantum.CreateQuantumProgramRequest(parent=parent_name, quantum_program=program)
         program = await self._send_request_async(self.grpc_client.create_quantum_program, request)
         return _ids_from_program_name(program.name)[1], program
 
@@ -267,7 +232,7 @@ class EngineClient:
             val = _date_or_time_to_filter_expr('created_before', created_before)
             filters.append(f"create_time <= {val}")
         if has_labels is not None:
-            for (k, v) in has_labels.items():
+            for k, v in has_labels.items():
                 filters.append(f"labels.{k}:{v}")
         request = quantum.ListQuantumProgramsRequest(
             parent=_project_name(project_id), filter=" AND ".join(filters)
@@ -434,7 +399,7 @@ class EngineClient:
             Tuple of created job id and job.
 
         Raises:
-            ValueError: If the priority is not betwen 0 and 1000.
+            ValueError: If the priority is not between 0 and 1000.
         """
         # Check program to run and program parameters.
         if priority and not 0 <= priority < 1000:
@@ -461,9 +426,7 @@ class EngineClient:
         if labels:
             job.labels.update(labels)
         request = quantum.CreateQuantumJobRequest(
-            parent=_program_name_from_ids(project_id, program_id),
-            quantum_job=job,
-            overwrite_existing_run_context=False,
+            parent=_program_name_from_ids(project_id, program_id), quantum_job=job
         )
         job = await self._send_request_async(self.grpc_client.create_quantum_job, request)
         return _ids_from_job_name(job.name)[2], job
@@ -518,7 +481,7 @@ class EngineClient:
             val = _date_or_time_to_filter_expr('created_before', created_before)
             filters.append(f"create_time <= {val}")
         if has_labels is not None:
-            for (k, v) in has_labels.items():
+            for k, v in has_labels.items():
                 filters.append(f"labels.{k}:{v}")
         if execution_states is not None:
             state_filter = []

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import datetime
 
 from typing import Dict, List, Optional, Sequence, TYPE_CHECKING, Union
@@ -116,7 +117,7 @@ class EngineProcessor(abstract_processor.AbstractProcessor):
         programs: Sequence[cirq.AbstractCircuit],
         program_id: Optional[str] = None,
         job_id: Optional[str] = None,
-        params_list: Sequence[cirq.Sweepable] = None,
+        params_list: Optional[Sequence[cirq.Sweepable]] = None,
         repetitions: int = 1,
         program_description: Optional[str] = None,
         program_labels: Optional[Dict[str, str]] = None,
@@ -208,7 +209,7 @@ class EngineProcessor(abstract_processor.AbstractProcessor):
             program_description: An optional description to set on the program.
             program_labels: Optional set of labels to set on the program.
             job_description: An optional description to set on the job.
-            job_labels: Optional set of labels to set on the job.  By defauly,
+            job_labels: Optional set of labels to set on the job.  By default,
                 this will add a 'calibration' label to the job.
         Returns:
             An AbstractJob whose results can be retrieved by calling
@@ -359,14 +360,14 @@ class EngineProcessor(abstract_processor.AbstractProcessor):
         latest_timestamp_seconds = _date_to_timestamp(latest_timestamp)
 
         if earliest_timestamp_seconds and latest_timestamp_seconds:
-            filter_str = 'timestamp >= %d AND timestamp <= %d' % (
-                earliest_timestamp_seconds,
-                latest_timestamp_seconds,
+            filter_str = (
+                f'timestamp >= {earliest_timestamp_seconds:d} AND '
+                f'timestamp <= {latest_timestamp_seconds:d}'
             )
         elif earliest_timestamp_seconds:
-            filter_str = 'timestamp >= %d' % earliest_timestamp_seconds
+            filter_str = f'timestamp >= {earliest_timestamp_seconds:d}'
         elif latest_timestamp_seconds:
-            filter_str = 'timestamp <= %d' % latest_timestamp_seconds
+            filter_str = f'timestamp <= {latest_timestamp_seconds:d}'
         else:
             filter_str = ''
         response = self.context.client.list_calibrations(
@@ -472,9 +473,9 @@ class EngineProcessor(abstract_processor.AbstractProcessor):
     def update_reservation(
         self,
         reservation_id: str,
-        start_time: datetime.datetime = None,
-        end_time: datetime.datetime = None,
-        whitelisted_users: List[str] = None,
+        start_time: Optional[datetime.datetime] = None,
+        end_time: Optional[datetime.datetime] = None,
+        whitelisted_users: Optional[List[str]] = None,
     ):
         """Updates a reservation with new information.
 
