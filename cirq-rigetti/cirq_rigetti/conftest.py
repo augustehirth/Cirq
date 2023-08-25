@@ -31,8 +31,7 @@ import sympy
 import numpy as np
 
 
-def pytest_collection_modifyitems(config, items):
-    # coverage: ignore
+def pytest_collection_modifyitems(config, items):  # pragma: no cover
     # do not skip integration tests if --rigetti-integration option passed
     if config.getoption('--rigetti-integration'):
         return
@@ -63,7 +62,7 @@ class MockQAM(QAM, Generic[T]):
         self._run_count = 0
         self._mock_results: Dict[str, np.ndarray] = {}
 
-    def execute(self, executable: QuantumExecutable) -> T:
+    def execute(self, executable: QuantumExecutable) -> T:  # type: ignore[empty-body]
         pass
 
     def run(self, program: QuantumExecutable) -> QAMExecutionResult:

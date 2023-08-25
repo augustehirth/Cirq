@@ -34,7 +34,7 @@ class Service:
         self,
         remote_host: Optional[str] = None,
         api_key: Optional[str] = None,
-        default_target: str = None,
+        default_target: Optional[str] = None,
         api_version='v0.1',
         max_retry_seconds: int = 3600,
         verbose=False,
@@ -62,9 +62,12 @@ class Service:
                 This is actually an EnvironmentError which is equal to an OSError.
         """
         self.remote_host = (
-            remote_host or os.getenv('IONQ_REMOTE_HOST') or f'https://api.ionq.co/{api_version}'
+            remote_host
+            or os.getenv('CIRQ_IONQ_REMOTE_HOST')
+            or os.getenv('IONQ_REMOTE_HOST')
+            or f'https://api.ionq.co/{api_version}'
         )
-        self.api_key = api_key or os.getenv('IONQ_API_KEY')
+        self.api_key = api_key or os.getenv('CIRQ_IONQ_API_KEY') or os.getenv('IONQ_API_KEY')
         if not self.api_key:
             raise EnvironmentError(
                 'Parameter api_key was not specified and the environment variable '
@@ -212,8 +215,8 @@ class Service:
 
     def list_calibrations(
         self,
-        start: datetime.datetime = None,
-        end: datetime.datetime = None,
+        start: Optional[datetime.datetime] = None,
+        end: Optional[datetime.datetime] = None,
         limit: int = 100,
         batch_size: int = 1000,
     ) -> Sequence[calibration.Calibration]:

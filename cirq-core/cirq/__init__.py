@@ -16,6 +16,8 @@
 
 from cirq import _import
 
+from cirq._compat import __cirq_debug__, with_debug
+
 # A module can only depend on modules imported earlier in this list of modules
 # at import time.  Pytest will fail otherwise (enforced by
 # dev_tools/import_test.py).
@@ -236,6 +238,7 @@ from cirq.ops import (
     LinearCombinationOfOperations,
     MatrixGate,
     MixedUnitaryChannel,
+    M,
     measure,
     measure_each,
     measure_paulistring_terms,
@@ -281,9 +284,11 @@ from cirq.ops import (
     qft,
     Qid,
     QuantumFourierTransformGate,
+    QubitManager,
     QubitOrder,
     QubitOrderOrList,
     QubitPermutationGate,
+    R,
     reset,
     reset_each,
     ResetChannel,
@@ -366,6 +371,7 @@ from cirq.transformers import (
     parameterized_2q_op_to_sqrt_iswap_operations,
     prepare_two_qubit_state_using_cz,
     prepare_two_qubit_state_using_sqrt_iswap,
+    quantum_shannon_decomposition,
     RouteCQC,
     routed_circuit_with_mapping,
     SqrtIswapTargetGateset,
@@ -498,6 +504,7 @@ from cirq.study import (
     Result,
     UnitSweep,
     Zip,
+    ZipLongest,
 )
 
 from cirq.value import (
@@ -561,6 +568,7 @@ from cirq.protocols import (
     decompose,
     decompose_once,
     decompose_once_with_qubits,
+    DecompositionContext,
     DEFAULT_RESOLVERS,
     definitely_commutes,
     equal_up_to_global_phase,

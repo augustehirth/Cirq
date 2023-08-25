@@ -124,7 +124,7 @@ class EngineProgram(abstract_program.AbstractProgram):
     async def run_batch_async(
         self,
         job_id: Optional[str] = None,
-        params_list: List[cirq.Sweepable] = None,
+        params_list: Optional[List[cirq.Sweepable]] = None,
         repetitions: int = 1,
         processor_ids: Sequence[str] = (),
         description: Optional[str] = None,
@@ -550,7 +550,7 @@ def _deserialize_program(code: any_pb2.Any, program_num: Optional[int] = None) -
         batch = v2.batch_pb2.BatchProgram.FromString(code.value)
         if abs(program_num) >= len(batch.programs):
             raise ValueError(
-                f'Only {len(batch.programs)} in the batch but ' f'index {program_num} was specified'
+                f'Only {len(batch.programs)} in the batch but index {program_num} was specified'
             )
 
         program = batch.programs[program_num]
