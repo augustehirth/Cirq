@@ -16,6 +16,8 @@
 
 from cirq.testing.circuit_compare import (
     assert_circuits_with_terminal_measurements_are_equivalent,
+    assert_circuits_have_same_unitary_given_final_permutation,
+    assert_has_consistent_apply_channel,
     assert_has_consistent_apply_unitary,
     assert_has_consistent_apply_unitary_for_various_exponents,
     assert_has_diagram,
@@ -96,6 +98,12 @@ from cirq.testing.repr_pretty_tester import (
     assert_repr_pretty,
     assert_repr_pretty_contains,
     FakePrinter,
+)
+
+from cirq.testing.routing_devices import (
+    construct_grid_device,
+    construct_ring_device,
+    RoutingTestingDevice,
 )
 
 from cirq.testing.sample_circuits import nonoptimal_toffoli_circuit

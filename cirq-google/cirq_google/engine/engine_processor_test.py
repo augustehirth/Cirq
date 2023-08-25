@@ -207,7 +207,7 @@ _CALIBRATION_RESULTS_V2 = util.pack_any(
 )
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope='module', autouse=True)
 def mock_grpc_client():
     with mock.patch(
         'cirq_google.engine.engine_client.quantum.QuantumEngineServiceClient'
@@ -722,7 +722,7 @@ def _allow_deprecated_freezegun(func):
                 # mypy can't resolve that orig_exist ensures that orig_value
                 # of type Optional[str] can't be None
                 # coverage: ignore
-                os.environ[ALLOW_DEPRECATION_IN_TEST] = orig_value  # type: ignore
+                os.environ[ALLOW_DEPRECATION_IN_TEST] = orig_value
             else:
                 del os.environ[ALLOW_DEPRECATION_IN_TEST]
 

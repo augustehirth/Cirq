@@ -21,7 +21,7 @@ import sympy
 import cirq
 from cirq.devices import line_qubit
 from cirq.ops import common_gates, parity_gates
-from .ionq_native_gates import GPIGate, GPI2Gate, MSGate
+from cirq_ionq.ionq_native_gates import GPIGate, GPI2Gate, MSGate
 
 _NATIVE_GATES = cirq.Gateset(
     GPIGate, GPI2Gate, MSGate, cirq.MeasurementGate, unroll_circuit_op=False
@@ -205,7 +205,7 @@ class Serializer:
         return {'gate': 'gpi2', 'target': targets[0], 'phase': gate.phase}
 
     def _serialize_ms_gate(self, gate: MSGate, targets: Sequence[int]) -> Optional[dict]:
-        return {'gate': 'ms', 'targets': targets, 'phases': gate.phases}
+        return {'gate': 'ms', 'targets': targets, 'phases': gate.phases, 'angle': gate.theta}
 
     def _serialize_cnot_pow_gate(
         self, gate: cirq.CNotPowGate, targets: Sequence[int]

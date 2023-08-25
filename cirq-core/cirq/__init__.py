@@ -287,6 +287,7 @@ from cirq.ops import (
     reset,
     reset_each,
     ResetChannel,
+    RoutingSwapTag,
     riswap,
     Rx,
     Ry,
@@ -301,6 +302,7 @@ from cirq.ops import (
     SQRT_ISWAP_INV,
     SWAP,
     SwapPowGate,
+    SumOfProducts,
     T,
     TaggedOperation,
     ThreeQubitDiagonalGate,
@@ -325,6 +327,7 @@ from cirq.ops import (
 )
 
 from cirq.transformers import (
+    AbstractInitialMapper,
     align_left,
     align_right,
     CompilationTargetGateset,
@@ -344,7 +347,10 @@ from cirq.transformers import (
     eject_phased_paulis,
     eject_z,
     expand_composite,
+    HardCodedInitialMapper,
     is_negligible_turn,
+    LineInitialMapper,
+    MappingManager,
     map_moments,
     map_operations,
     map_operations_and_unroll,
@@ -360,6 +366,8 @@ from cirq.transformers import (
     parameterized_2q_op_to_sqrt_iswap_operations,
     prepare_two_qubit_state_using_cz,
     prepare_two_qubit_state_using_sqrt_iswap,
+    RouteCQC,
+    routed_circuit_with_mapping,
     SqrtIswapTargetGateset,
     single_qubit_matrix_to_gates,
     single_qubit_matrix_to_pauli_rotations,
@@ -373,6 +381,7 @@ from cirq.transformers import (
     TransformerLogger,
     three_qubit_matrix_to_operations,
     transformer,
+    two_qubit_matrix_to_cz_isometry,
     two_qubit_matrix_to_cz_operations,
     two_qubit_matrix_to_diagonal_and_cz_operations,
     two_qubit_matrix_to_ion_operations,
@@ -630,7 +639,6 @@ from cirq.protocols import (
     with_rescoped_keys,
 )
 
-from cirq.ion import ConvertToIonGates, IonDevice
 from cirq.neutral_atoms import is_native_neutral_atom_gate, is_native_neutral_atom_op
 
 from cirq.vis import (

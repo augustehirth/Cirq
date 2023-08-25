@@ -14,12 +14,11 @@
 """Abstract classes for simulations which keep track of state vector."""
 
 import abc
-from typing import Any, Dict, Iterator, Sequence, Type, TYPE_CHECKING, Generic, TypeVar, Optional
+from typing import Any, Dict, Iterator, Sequence, Type, TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
 
-from cirq import ops, value, qis
-from cirq._compat import proper_repr
+from cirq import _compat, ops, value, qis
 from cirq.sim import simulator, state_vector, simulator_base
 
 if TYPE_CHECKING:
@@ -86,7 +85,8 @@ class SimulatesIntermediateStateVector(
         trial_result_iter = self.simulate_sweep_iter(program, params, qubit_order)
 
         yield from (
-            trial_result.final_state_vector[bitstrings] for trial_result in trial_result_iter
+            trial_result.final_state_vector[bitstrings].tolist()
+            for trial_result in trial_result_iter
         )
 
 
@@ -119,16 +119,10 @@ class StateVectorTrialResult(
             final_simulator_state=final_simulator_state,
             qubit_map=final_simulator_state.qubit_map,
         )
-        self._final_state_vector: Optional[np.ndarray] = None
 
-    @property
+    @_compat.cached_property
     def final_state_vector(self) -> np.ndarray:
-        if self._final_state_vector is None:
-            tensor = self._get_merged_sim_state().target_tensor
-            if tensor.ndim > 1:
-                tensor = tensor.reshape(np.prod(tensor.shape))
-            self._final_state_vector = tensor
-        return self._final_state_vector
+        return self._get_merged_sim_state().target_tensor.reshape(-1)
 
     def state_vector(self, copy: bool = False) -> np.ndarray:
         """Return the state vector at the end of the computation.
@@ -196,6 +190,6 @@ class StateVectorTrialResult(
     def __repr__(self) -> str:
         return (
             'cirq.StateVectorTrialResult('
-            f'params={self.params!r}, measurements={proper_repr(self.measurements)}, '
+            f'params={self.params!r}, measurements={_compat.proper_repr(self.measurements)}, '
             f'final_simulator_state={self._final_simulator_state!r})'
         )

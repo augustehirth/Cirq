@@ -36,7 +36,6 @@ TestSpec = ModuleJsonTestSpec(
         'DensityMatrixTrialResult',
         'ExpressionMap',
         'InsertStrategy',
-        'IonDevice',
         'KakDecomposition',
         'LinearCombinationOfGates',
         'LinearCombinationOfOperations',
@@ -79,12 +78,16 @@ TestSpec = ModuleJsonTestSpec(
         'TwoQubitCompilationTargetGateset',
         # Circuit optimizers are function-like. Only attributes
         # are ignore_failures, tolerance, and other feature flags
-        'ConvertToIonGates',
         'MEASUREMENT_KEY_SEPARATOR',
         'PointOptimizer',
         # Transformers
         'TransformerLogger',
         'TransformerContext',
+        # Routing utilities
+        'HardCodedInitialMapper',
+        'LineInitialMapper',
+        'MappingManager',
+        'RouteCQC',
         # global objects
         'CONTROL_TAG',
         'PAULI_BASIS',

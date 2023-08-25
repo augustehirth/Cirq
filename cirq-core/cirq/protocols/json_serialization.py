@@ -584,8 +584,8 @@ def to_json(
     obj: Any,
     file_or_fn: Union[None, IO, pathlib.Path, str] = None,
     *,
-    indent: int = 2,
-    separators: Tuple[str, str] = None,
+    indent: Optional[int] = 2,
+    separators: Optional[Tuple[str, str]] = None,
     cls: Type[json.JSONEncoder] = CirqEncoder,
 ) -> Optional[str]:
     """Write a JSON file containing a representation of obj.
@@ -729,7 +729,7 @@ def to_json_gzip(
             actually_a_file.write(json_str)
             return None
 
-    gzip_data = gzip.compress(bytes(json_str, encoding='utf-8'))  # type: ignore
+    gzip_data = gzip.compress(bytes(json_str, encoding='utf-8'))
     if file_or_fn is None:
         return gzip_data
 

@@ -42,7 +42,7 @@ class NoiseModel(metaclass=value.ABCMetaImplementAnyOneOf):
 
     @classmethod
     def from_noise_model_like(cls, noise: 'cirq.NOISE_MODEL_LIKE') -> 'cirq.NoiseModel':
-        """Transforms an object into a noise model if umambiguously possible.
+        """Transforms an object into a noise model if unambiguously possible.
 
         Args:
             noise: `None`, a `cirq.NoiseModel`, or a single qubit operation.
@@ -283,7 +283,7 @@ document(
 
 NOISE_MODEL_LIKE = Union[None, 'cirq.NoiseModel', 'cirq.Gate']
 document(
-    NOISE_MODEL_LIKE,  # type: ignore
+    NOISE_MODEL_LIKE,
     """A `cirq.NoiseModel` or a value that can be trivially converted into one.
 
     `None` is a `NOISE_MODEL_LIKE`. It will be replaced by the `cirq.NO_NOISE`

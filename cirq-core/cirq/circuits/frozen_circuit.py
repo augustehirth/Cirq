@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """An immutable version of the Circuit data structure."""
-from typing import TYPE_CHECKING, FrozenSet, Iterable, Iterator, Sequence, Tuple, Union
+from typing import FrozenSet, Iterable, Iterator, Sequence, Tuple, TYPE_CHECKING, Union
 
 import numpy as np
 
@@ -51,12 +51,29 @@ class FrozenCircuit(AbstractCircuit, protocols.SerializableByKey):
         base = Circuit(contents, strategy=strategy)
         self._moments = tuple(base.moments)
 
+    @classmethod
+    def _from_moments(cls, moments: Iterable['cirq.Moment']) -> 'FrozenCircuit':
+        new_circuit = FrozenCircuit()
+        new_circuit._moments = tuple(moments)
+        return new_circuit
+
     @property
     def moments(self) -> Sequence['cirq.Moment']:
         return self._moments
 
-    def __hash__(self):
+    @_compat.cached_method
+    def __hash__(self) -> int:
+        # Explicitly cached for performance
         return hash((self.moments,))
+
+    def __getstate__(self):
+        # Don't save hash when pickling; see #3777.
+        state = self.__dict__
+        hash_cache = _compat._method_cache_name(self.__hash__)
+        if hash_cache in state:
+            state = state.copy()
+            del state[hash_cache]
+        return state
 
     @_compat.cached_method
     def _num_qubits_(self) -> int:
@@ -131,16 +148,6 @@ class FrozenCircuit(AbstractCircuit, protocols.SerializableByKey):
             return (self.unfreeze() ** other).freeze()
         except:
             return NotImplemented
-
-    def _with_sliced_moments(self, moments: Iterable['cirq.Moment']) -> 'FrozenCircuit':
-        new_circuit = FrozenCircuit()
-        new_circuit._moments = tuple(moments)
-        return new_circuit
-
-    def _resolve_parameters_(
-        self, resolver: 'cirq.ParamResolver', recursive: bool
-    ) -> 'cirq.FrozenCircuit':
-        return self.unfreeze()._resolve_parameters_(resolver, recursive).freeze()
 
     def concat_ragged(
         *circuits: 'cirq.AbstractCircuit', align: Union['cirq.Alignment', str] = Alignment.LEFT

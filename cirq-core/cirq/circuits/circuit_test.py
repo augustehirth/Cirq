@@ -70,6 +70,23 @@ class _MomentAndOpTypeValidatingDeviceType(cirq.Device):
 moment_and_op_type_validating_device = _MomentAndOpTypeValidatingDeviceType()
 
 
+def test_from_moments():
+    a, b, c, d = cirq.LineQubit.range(4)
+    assert cirq.Circuit.from_moments(
+        [cirq.X(a), cirq.Y(b)],
+        [cirq.X(c)],
+        [],
+        cirq.Z(d),
+        [cirq.measure(a, b, key='ab'), cirq.measure(c, d, key='cd')],
+    ) == cirq.Circuit(
+        cirq.Moment(cirq.X(a), cirq.Y(b)),
+        cirq.Moment(cirq.X(c)),
+        cirq.Moment(),
+        cirq.Moment(cirq.Z(d)),
+        cirq.Moment(cirq.measure(a, b, key='ab'), cirq.measure(c, d, key='cd')),
+    )
+
+
 def test_alignment():
     assert repr(cirq.Alignment.LEFT) == 'cirq.Alignment.LEFT'
     assert repr(cirq.Alignment.RIGHT) == 'cirq.Alignment.RIGHT'
@@ -170,6 +187,12 @@ def test_append_single():
     c.append([cirq.X(a)])
     assert c == cirq.Circuit([cirq.Moment([cirq.X(a)])])
 
+    c = cirq.Circuit(cirq.H(a))
+    c.append(c)
+    assert c == cirq.Circuit(
+        [cirq.Moment(cirq.H(cirq.NamedQubit('a'))), cirq.Moment(cirq.H(cirq.NamedQubit('a')))]
+    )
+
 
 def test_append_control_key():
     q0, q1, q2 = cirq.LineQubit.range(3)
@@ -267,6 +290,16 @@ def test_append_control_key_subcircuit():
         ).with_measurement_key_mapping({'b': 'a'})
     )
     assert len(c) == 1
+
+
+def test_measurement_key_paths():
+    a = cirq.LineQubit(0)
+    circuit1 = cirq.Circuit(cirq.measure(a, key='A'))
+    assert cirq.measurement_key_names(circuit1) == {'A'}
+    circuit2 = cirq.with_key_path(circuit1, ('B',))
+    assert cirq.measurement_key_names(circuit2) == {'B:A'}
+    circuit3 = cirq.with_key_path_prefix(circuit2, ('C',))
+    assert cirq.measurement_key_names(circuit3) == {'C:B:A'}
 
 
 def test_append_moments():
@@ -2662,7 +2695,7 @@ def test_compare_circuits_superoperator_to_simulation(circuit, initial_state):
     """Compares action of circuit superoperator and circuit simulation."""
     assert circuit._has_superoperator_()
     superoperator = circuit._superoperator_()
-    vectorized_initial_state = np.reshape(initial_state, np.prod(initial_state.shape))
+    vectorized_initial_state = initial_state.reshape(-1)
     vectorized_final_state = superoperator @ vectorized_initial_state
     actual_state = np.reshape(vectorized_final_state, initial_state.shape)
 
@@ -3004,6 +3037,23 @@ def test_resolve_parameters(circuit_cls, resolve_fn):
     resolved_circuit = resolve_fn(circuit, cirq.ParamResolver({'x': 0.2}))
     expected_circuit = circuit_cls([cirq.Moment(), cirq.Moment([cirq.X(q) ** 0.2])])
     cirq.testing.assert_same_circuits(expected_circuit, resolved_circuit)
+
+
+@pytest.mark.parametrize('circuit_cls', [cirq.Circuit, cirq.FrozenCircuit])
+@pytest.mark.parametrize('resolve_fn', [cirq.resolve_parameters, cirq.resolve_parameters_once])
+def test_resolve_parameters_no_change(circuit_cls, resolve_fn):
+    a, b = cirq.LineQubit.range(2)
+    circuit = circuit_cls(cirq.CZ(a, b), cirq.X(a), cirq.Y(b))
+    resolved_circuit = resolve_fn(circuit, cirq.ParamResolver({'u': 0.1, 'v': 0.3, 'w': 0.2}))
+    assert resolved_circuit is circuit
+
+    circuit = circuit_cls(
+        cirq.CZ(a, b) ** sympy.Symbol('u'),
+        cirq.X(a) ** sympy.Symbol('v'),
+        cirq.Y(b) ** sympy.Symbol('w'),
+    )
+    resolved_circuit = resolve_fn(circuit, cirq.ParamResolver({}))
+    assert resolved_circuit is circuit
 
 
 @pytest.mark.parametrize('circuit_cls', [cirq.Circuit, cirq.FrozenCircuit])
@@ -4453,6 +4503,13 @@ def test_concat_ragged_alignment():
     )
 
 
+def test_freeze_not_relocate_moments():
+    q = cirq.q(0)
+    c = cirq.Circuit(cirq.X(q), cirq.measure(q))
+    f = c.freeze()
+    assert [mc is fc for mc, fc in zip(c, f)] == [True, True]
+
+
 def test_factorize_one_factor():
     circuit = cirq.Circuit()
     q0, q1, q2 = cirq.LineQubit.range(3)
@@ -4652,6 +4709,11 @@ def test_create_speed():
     # Previously this took ~30s to run. Now it should take ~150ms. However the coverage test can
     # run this slowly, so allowing 2 sec to account for things like that. Feel free to increase the
     # buffer time or delete the test entirely if it ends up causing flakes.
+    #
+    # Updated in https://github.com/quantumlib/Cirq/pull/5756
+    # After several tiny overtime failures of the GitHub CI Pytest MacOS (3.7)
+    # the timeout was increased to 4 sec.  A more thorough investigation or test
+    # removal should be considered if this continues to time out.
     qs = 100
     moments = 500
     xs = [cirq.X(cirq.LineQubit(i)) for i in range(qs)]
@@ -4659,4 +4721,4 @@ def test_create_speed():
     t = time.perf_counter()
     c = cirq.Circuit(opa)
     assert len(c) == moments
-    assert time.perf_counter() - t < 2
+    assert time.perf_counter() - t < 4

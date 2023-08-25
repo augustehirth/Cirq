@@ -54,8 +54,9 @@ NOTEBOOKS_DEPENDING_ON_UNRELEASED_FEATURES: List[str] = [
     'docs/tutorials/google/visualizing_calibration_metrics.ipynb',
     'docs/noise/qcvv/xeb_calibration_example.ipynb',
     'docs/named_topologies.ipynb',
-    'docs/representing_noise.ipynb',
     'docs/start/intro.ipynb',
+    # Circuit routing
+    'docs/transform/routing_transformer.ipynb',
 ]
 
 # By default all notebooks should be tested, however, this list contains exceptions to the rule
@@ -76,6 +77,8 @@ SKIP_NOTEBOOKS = [
     "examples/*fidelity*",
     # Also skipping stabilizer code testing.
     "examples/*stabilizer_code*",
+    # An intentionally empty/template code notebook.
+    "docs/simulate/qvm_builder_code.ipynb",
     *NOTEBOOKS_DEPENDING_ON_UNRELEASED_FEATURES,
 ]
 

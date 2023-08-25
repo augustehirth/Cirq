@@ -13,12 +13,12 @@
 # limitations under the License.
 import datetime
 
-from typing import Dict, Iterable, List, Optional, Sequence, TYPE_CHECKING, Union
+from typing import Dict, List, Optional, Sequence, TYPE_CHECKING, Union
 
 import cirq
 
 from cirq_google.api import v2
-from cirq_google.engine import calibration, util, validating_sampler
+from cirq_google.engine import calibration, validating_sampler
 from cirq_google.engine.abstract_local_processor import AbstractLocalProcessor
 from cirq_google.engine.abstract_local_program import AbstractLocalProgram
 from cirq_google.engine.abstract_program import AbstractProgram
@@ -86,6 +86,8 @@ class SimulatedLocalProcessor(AbstractLocalProcessor):
         schedule:  List of time slots that the scheduling/reservation should
             use.  All time slots must be non-overlapping.
         project_name: A project_name for resource naming.
+        device_specification: a` DeviceSpecification` proto that the processor
+            should return if `get_device_specification()` is queried.
     """
 
     def __init__(
@@ -97,6 +99,7 @@ class SimulatedLocalProcessor(AbstractLocalProcessor):
         program_validator: engine_validator.PROGRAM_VALIDATOR_TYPE = None,
         simulation_type: LocalSimulationType = LocalSimulationType.SYNCHRONOUS,
         calibrations: Optional[Dict[int, calibration.Calibration]] = None,
+        device_specification: Optional[v2.device_pb2.DeviceSpecification] = None,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
@@ -109,6 +112,7 @@ class SimulatedLocalProcessor(AbstractLocalProcessor):
             device=self._device, validator=self._validator, sampler=sampler
         )
         self._programs: Dict[str, AbstractLocalProgram] = {}
+        self._device_specification = device_specification
 
     def remove_program(self, program_id: str):
         """Remove reference to a child program."""
@@ -126,18 +130,17 @@ class SimulatedLocalProcessor(AbstractLocalProcessor):
     def get_current_calibration(self) -> Optional[calibration.Calibration]:
         return self.get_latest_calibration(int(datetime.datetime.now().timestamp()))
 
-    @util.deprecated_get_device_gate_sets_parameter()
-    def get_device(self, gate_sets: Iterable['Serializer'] = ()) -> cirq.Device:
-        """Returns a `Device` created from the processor's device specification.
+    def get_device(self) -> cirq.Device:
+        """Returns a `cirq.Device` created from the processor's device specification.
 
         This method queries the processor to retrieve the device specification,
-        which is then use to create a `SerializableDevice` that will validate
+        which is then use to create a `cirq.Device` that will validate
         that operations are supported and use the correct qubits.
         """
         return self._device
 
     def get_device_specification(self) -> Optional[v2.device_pb2.DeviceSpecification]:
-        raise NotImplementedError
+        return self._device_specification
 
     def health(self):
         return 'OK'
